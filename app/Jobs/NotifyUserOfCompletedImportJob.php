@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\NotifyUserOfCompletedImportMail;
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,17 +16,17 @@ class NotifyUserOfCompletedImportJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $rejectedRecords, $accedptedRecords;
+    protected $rowCountOld, $fileRecordsCount;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(int $rejectedRecords, int $accedptedRecords)
+    public function __construct(int $rowCountOld, int $fileRecordsCount)
     {
-        $this->rejectedRecords = $rejectedRecords;
-        $this->accedptedRecords = $accedptedRecords;
+        $this->rowCountOld = $rowCountOld;
+        $this->fileRecordsCount = $fileRecordsCount;
     }
 
     /**
@@ -35,6 +36,10 @@ class NotifyUserOfCompletedImportJob implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to(User::where('role', 'Admin')->find(1))->send(new NotifyUserOfCompletedImportMail($this->rejectedRecords, $this->accedptedRecords));
+        $rowCountNew = Patient::count();
+        $acceptedRecords = $rowCountNew - $this->rowCountOld;
+        $rejectedRecords = $this->fileRecordsCount - $acceptedRecords;
+
+        Mail::to(User::where('role', 'Admin')->find(1))->send(new NotifyUserOfCompletedImportMail($rejectedRecords, $acceptedRecords));
     }
 }
