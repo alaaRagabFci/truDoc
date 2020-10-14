@@ -21,7 +21,7 @@ class PatientTest extends TestCase
             'file' => $file
         ]);
 
-        $result->assertStatus(200);
+        $result->assertStatus(201);
         $result->assertJson([
             'status' =>  true
         ]);
